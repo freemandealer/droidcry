@@ -30,17 +30,19 @@
 #include <linux/fs_struct.h>
 #include <linux/fdtable.h>
 
+/*
 struct super_block *sb;
 struct super_operations *lower_ops;
-
+*/
 /**
  * 拷贝/替换　super_block　的操作表内容
  * 凡是没有直接拷贝的函数指针都要重新实现,并在新的操作表中赋值
  */
+/*
 struct inode * droidcry_alloc_inode(struct super_block *sb)
 {
 	printk(KERN_ALERT "OOOOOOOO: alloc inode \n");
-	return lower_ops->alloc_inode(sb);
+	return lower_ops->alloc_inode(sb); 
 }
 
 struct super_operations droidcry_sops = {
@@ -62,26 +64,20 @@ static void copy_super_operations()
 	droidcry_sops.show_options = lower_ops->show_options;
 	droidcry_sops.bdev_try_to_free_page = lower_ops->bdev_try_to_free_page;
 }
-
-
+*/
 
 static int droidcry_init(void)
 {
-	struct task_struct *pcurrent;
+	const char * pathname = "/mnt/";
+	struct path path;
+	struct nameidata nd;
 	
 	printk(KERN_ALERT "droidcry initializing ...\n");
-	pcurrent = get_current();
-	sb = pcurrent->fs->pwd.dentry->d_sb;
-	if (sb->s_op->freeze_fs != NULL) {
-		printk(KERN_ALERT "ext4: journal\n");
-	}
-	else {
-		/* Android采用nojournal的ext4文件系统 */
-		printk(KERN_ALERT "ext4: no journal\n");
-		lower_ops = sb->s_op;
-		sb->s_op = &droidcry_sops;
-		copy_super_operations();
-	}
+	
+	kern_path(pathname, LOOKUP_DIRECTORY, &path);
+	printk("OOOOOOOO: we got this one -- %s\n",path.dentry->d_iname);
+	
+	
 	return 0; 
 }
 
@@ -90,8 +86,6 @@ static int droidcry_init(void)
 static void droidcry_exit(void)
 {
 	printk(KERN_ALERT "Uninstalling droidcry ...\n");
-	/* 还原操作表 */
-	sb->s_op = lower_ops;
 }
 
 module_init(droidcry_init);
