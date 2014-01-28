@@ -30,54 +30,51 @@
 #include <linux/fs_struct.h>
 #include <linux/fdtable.h>
 
-/*
-struct super_block *sb;
-struct super_operations *lower_ops;
-*/
+
+struct inode_operations *lower_iops;
+
 /**
- * 拷贝/替换　super_block　的操作表内容
+ * 拷贝/替换　inode　的操作表内容
  * 凡是没有直接拷贝的函数指针都要重新实现,并在新的操作表中赋值
  */
-/*
-struct inode * droidcry_alloc_inode(struct super_block *sb)
+static struct dentry *droidcry_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *nd) 
 {
-	printk(KERN_ALERT "OOOOOOOO: alloc inode \n");
-	return lower_ops->alloc_inode(sb); 
+	printk("OOOOOOOO: My own lookup\n");
+	return lower_iops->lookup(dir,dentry,nd);
 }
 
-struct super_operations droidcry_sops = {
-	.alloc_inode = droidcry_alloc_inode,
+struct inode_operations droidcry_iops = {
+	.lookup = droidcry_lookup,
 };
 
-static void copy_super_operations()
+void droidcry_copy_inode_operations()
 {
-	//droidcry_sops.alloc_inode = lower_ops->alloc_inode;
-	droidcry_sops.destroy_inode = lower_ops->destroy_inode;
-	droidcry_sops.write_inode = lower_ops->write_inode;
-	droidcry_sops.dirty_inode = lower_ops->dirty_inode;
-	droidcry_sops.drop_inode = lower_ops->drop_inode;
-	droidcry_sops.evict_inode = lower_ops->evict_inode;
-	droidcry_sops.write_super = lower_ops->write_super;
-	droidcry_sops.put_super = lower_ops->put_super;
-	droidcry_sops.statfs = lower_ops->statfs;
-	droidcry_sops.remount_fs = lower_ops->remount_fs;
-	droidcry_sops.show_options = lower_ops->show_options;
-	droidcry_sops.bdev_try_to_free_page = lower_ops->bdev_try_to_free_page;
+	droidcry_iops.create 	= lower_iops->create;
+	//droidcry_iops.lookup	= lower_iops->lookup;
+	droidcry_iops.link		= lower_iops->link;
+	droidcry_iops.unlink	= lower_iops->unlink;
+	droidcry_iops.symlink	= lower_iops->syslink;
+	droidcry_iops.mkdir		= lower_iops->mkdir;
+	droidcry_iops.rmdir		= lower_iops->rmdir;
+	droidcry_iops.mknod		= lower_iops->mknod;
+	droidcry_iops.rename	= lower_iops->rename;
+	droidcry_iops.setattr	= lower_iops->setattr;
+	droidcry_iops.get_acl	= lower_iops->get_acl;
+	droidcry_iops.fiemap    = lower_iops->fiemap;
 }
-*/
 
 static int droidcry_init(void)
 {
 	const char * pathname = "/mnt/";
 	struct path path;
-	struct nameidata nd;
-	
+		
 	printk(KERN_ALERT "droidcry initializing ...\n");
 	
 	kern_path(pathname, LOOKUP_DIRECTORY, &path);
 	printk("OOOOOOOO: we got this one -- %s\n",path.dentry->d_iname);
-	
-	
+	lower_iops = path.dentry->d_inode->i_ops;
+	path.dentry->d_inode->i_ops = &droidcry_iops;
+	copy_inode_operations();	
 	return 0; 
 }
 
