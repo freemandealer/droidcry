@@ -1,9 +1,3 @@
-/**
- * 
- *
- *
- */
- 
 #include <linux/backing-dev.h>
 #include <linux/dcache.h>
 #include <linux/file.h>
@@ -39,22 +33,29 @@ struct inode_operations *lower_iops;
  */
 static struct dentry *droidcry_lookup(struct inode *dir, struct dentry *dentry, struct nameidata *nd) 
 {
-	printk("OOOOOOOO: My own lookup\n");
+	printk(KERN_ALERT "OOOOOOOO: My own lookup\n");
 	return lower_iops->lookup(dir,dentry,nd);
+}
+
+static int droidcry_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+{
+	printk(KERN_ALERT "OOOOOOOO: My own mkdir\n");
+	return lower_iops->mkdir(dir, dentry, mode);
 }
 
 struct inode_operations droidcry_iops = {
 	.lookup = droidcry_lookup,
+	.mkdir = droidcry_mkdir,
 };
 
-void droidcry_copy_inode_operations()
+void droidcry_copy_inode_operations(void)
 {
 	droidcry_iops.create 	= lower_iops->create;
 	//droidcry_iops.lookup	= lower_iops->lookup;
 	droidcry_iops.link		= lower_iops->link;
 	droidcry_iops.unlink	= lower_iops->unlink;
-	droidcry_iops.symlink	= lower_iops->syslink;
-	droidcry_iops.mkdir		= lower_iops->mkdir;
+	droidcry_iops.symlink	= lower_iops->symlink;
+	//droidcry_iops.mkdir	= lower_iops->mkdir;
 	droidcry_iops.rmdir		= lower_iops->rmdir;
 	droidcry_iops.mknod		= lower_iops->mknod;
 	droidcry_iops.rename	= lower_iops->rename;
@@ -65,16 +66,30 @@ void droidcry_copy_inode_operations()
 
 static int droidcry_init(void)
 {
-	const char * pathname = "/mnt/";
-	struct path path;
+	const char * pathname = "/mnt/asec";
+	struct path secret_path;
+	struct list_head *p; // 用于迭代
+	struct dentry *d;
 		
-	printk(KERN_ALERT "droidcry initializing ...\n");
+	printk(KERN_ALERT "OOOOOOOO: droidcry initializing ...\n");
 	
-	kern_path(pathname, LOOKUP_DIRECTORY, &path);
-	printk("OOOOOOOO: we got this one -- %s\n",path.dentry->d_iname);
-	lower_iops = path.dentry->d_inode->i_ops;
-	path.dentry->d_inode->i_ops = &droidcry_iops;
-	copy_inode_operations();	
+	kern_path(pathname, LOOKUP_FOLLOW, &secret_path);
+	printk(KERN_ALERT "OOOOOOOO: secret directory -- %s\n",secret_path.dentry->d_iname);
+	/* 为加密目录保存之前的iops,然后替换之 */
+	lower_iops = secret_path.dentry->d_inode->i_op;
+	droidcry_copy_inode_operations();
+	secret_path.dentry->d_inode->i_op = &droidcry_iops;
+	/* 替换子目录的指针,本应该递归替换的，这里简单替换直接子目录 TODO*/
+	/*
+	printk(KERN_ALERT "OOOOOOOO: current child dentry in memory:\n");
+	p = &secret_path.dentry->d_subdirs;
+	while ( p != NULL ) {
+		printk(KERN_ALERT "OOOOOOOO\n");
+		d = container_of(p, struct dentry , d_u.d_child);
+		d->d_inode->i_op = &droidcry_iops;
+		printk(KERN_ALERT "OOOOOOOO: %s\n", d->d_iname);
+		p = p->next;
+	}*/
 	return 0; 
 }
 
