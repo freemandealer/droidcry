@@ -101,26 +101,26 @@ struct address_space_operations droidcry_aops = {
 };
 
 
-void droidcry_copy_address_space_operations(void)
+void droidcry_copy_address_space_operations(struct address_space_operations dest, struct address_space_operations *src)
 {
 	/* 使用前确定lower_aops准备就绪 */
-	//droidcry_aops.writepage		= lower_aops->writepage;
-	//droidcry_aops.readpage		= lower_aops->readpage;
-	//droidcry_aops.writepages	= lower_aops->writepages;
-	droidcry_aops.set_page_dirty= lower_aops->set_page_dirty;
-	//droidcry_aops.readpages		= lower_aops->readpages;
-	//droidcry_aops.write_begin	= lower_aops->write_begin;
-	//droidcry_aops.write_end		= lower_aops->write_end;
-	//droidcry_aops.bmap			= lower_aops->bmap;
-	droidcry_aops.invalidatepage= lower_aops->invalidatepage;
-	droidcry_aops.releasepage	= lower_aops->releasepage;
-	droidcry_aops.freepage		= lower_aops->freepage;
-	//droidcry_aops.direct_IO		= lower_aops->direct_IO;
-	droidcry_aops.get_xip_mem	= lower_aops->get_xip_mem;
-	droidcry_aops.migratepage	= lower_aops->migratepage;
-	droidcry_aops.launder_page	= lower_aops->launder_page;
-	droidcry_aops.is_partially_uptodate= lower_aops->is_partially_uptodate;
-	droidcry_aops.error_remove_page	= lower_aops->error_remove_page;
+	//dest.writepage		= src->writepage;
+	//dest.readpage		= src->readpage;
+	//dest.writepages	= src->writepages;
+	dest.set_page_dirty= src->set_page_dirty;
+	//dest.readpages		= src->readpages;
+	//dest.write_begin	= src->write_begin;
+	//dest.write_end		= src->write_end;
+	//dest.bmap			= src->bmap;
+	dest.invalidatepage= src->invalidatepage;
+	dest.releasepage	= src->releasepage;
+	dest.freepage		= src->freepage;
+	//dest.direct_IO		= src->direct_IO;
+	dest.get_xip_mem	= src->get_xip_mem;
+	dest.migratepage	= src->migratepage;
+	dest.launder_page	= src->launder_page;
+	dest.is_partially_uptodate= src->is_partially_uptodate;
+	dest.error_remove_page	= src->error_remove_page;
 }
 
 /**
@@ -136,7 +136,7 @@ static struct dentry *droidcry_lookup(struct inode *dir, struct dentry *dentry, 
 	if (!ret_dentry)
 		goto out;
 	lower_aops = ret_dentry->d_inode->i_mapping->a_ops;	
-	droidcry_copy_address_space_operations();
+	droidcry_copy_address_space_operations(droidcry_aops, lower_aops);
 	ret_dentry->d_inode->i_mapping->a_ops = &droidcry_aops;
 out:
 	return ret_dentry;
@@ -150,7 +150,7 @@ static int droidcry_create(struct inode *dir, struct dentry *dentry, umode_t mod
 	lower_aops = dentry->d_inode->i_mapping->a_ops;
 	if (lower_aops) {
 		printk(KERN_ALERT "OOOOOOOO: lower_aops is not null\n");
-		droidcry_copy_address_space_operations();
+		droidcry_copy_address_space_operations(droidcry_aops, lower_aops);
 	} else {
 		printk(KERN_ALERT "OOOOOOOO: lower_aops is null\n");
 	}
@@ -180,39 +180,6 @@ void droidcry_copy_inode_operations(void)
 	droidcry_iops.fiemap    = lower_iops->fiemap;
 }
 
-/**
- * 拷贝/替换　file　的操作表内容
- * 凡是没有直接拷贝的函数指针都要重新实现,并在新的操作表中赋值
- */
-struct file_operations {
-	struct module *owner;
-	loff_t (*llseek) (struct file *, loff_t, int);
-	ssize_t (*read) (struct file *, char __user *, size_t, loff_t *);
-	ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);
-	ssize_t (*aio_read) (struct kiocb *, const struct iovec *, unsigned long, loff_t);
-	ssize_t (*aio_write) (struct kiocb *, const struct iovec *, unsigned long, loff_t);
-	int (*readdir) (struct file *, void *, filldir_t);
-	unsigned int (*poll) (struct file *, struct poll_table_struct *);
-	long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);
-	long (*compat_ioctl) (struct file *, unsigned int, unsigned long);
-	int (*mmap) (struct file *, struct vm_area_struct *);
-	int (*open) (struct inode *, struct file *);
-	int (*flush) (struct file *, fl_owner_t id);
-	int (*release) (struct inode *, struct file *);
-	int (*fsync) (struct file *, loff_t, loff_t, int datasync);
-	int (*aio_fsync) (struct kiocb *, int datasync);
-	int (*fasync) (int, struct file *, int);
-	int (*lock) (struct file *, int, struct file_lock *);
-	ssize_t (*sendpage) (struct file *, struct page *, int, size_t, loff_t *, int);
-	unsigned long (*get_unmapped_area)(struct file *, unsigned long, unsigned long, unsigned long, unsigned long);
-	int (*check_flags)(int);
-	int (*flock) (struct file *, int, struct file_lock *);
-	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
-	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
-	int (*setlease)(struct file *, long, struct file_lock **);
-	long (*fallocate)(struct file *file, int mode, loff_t offset,
-			  loff_t len);
-}; 
 
  
 static int droidcry_init(void)
