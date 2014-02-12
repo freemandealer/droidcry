@@ -118,6 +118,41 @@ void droidcry_copy_address_space_operations(struct address_space_operations dest
 }
 
 /**
+ * 拷贝/替换　file　的操作表内容
+ * 凡是没有直接拷贝的函数指针都要重新实现,并在新的操作表中赋值
+ */
+static int droidcry_file_open(struct inode * inode, struct file * filp)
+{
+	printk("OOOOOOO: my own file open\n");
+	return lower_fops->open(inode ,filp);
+} 
+ 
+struct file_operations droidcry_fops = { 
+	.open		= droidcry_file_open,
+};
+
+void droidcry_copy_file_operations(void)
+{
+	droidcry_fops.llseek	= lower_fops->llseek;
+	droidcry_fops.read		= lower_fops->read;
+	droidcry_fops.write		= lower_fops->write;
+	droidcry_fops.aio_read	= lower_fops->aio_read;
+	droidcry_fops.aio_write	= lower_fops->aio_write;
+	droidcry_fops.unlocked_ioctl = lower_fops->unlocked_ioctl;
+#ifdef CONFIG_COMPAT
+	droidcry_fops.compat_ioctl	= lower_fops->compat_ioctl;
+#endif
+	droidcry_fops.mmap		= lower_fops->mmap;
+	//droidcry_fops.open		= lower_fops->open;
+	droidcry_fops.release	= lower_fops->release;
+	droidcry_fops.fsync		= lower_fops->fsync;
+	droidcry_fops.splice_read	= lower_fops->splice_read;
+	droidcry_fops.splice_write	= lower_fops->splice_write;
+	droidcry_fops.fallocate	= lower_fops->fallocate;
+}
+
+
+/**
  * 拷贝/替换　inode　的操作表内容
  * 凡是没有直接拷贝的函数指针都要重新实现,并在新的操作表中赋值
  */
@@ -142,15 +177,15 @@ static int droidcry_create(struct inode *dir, struct dentry *dentry, umode_t mod
 	printk(KERN_ALERT "OOOOOOOO: My own create\n");
 	
 	rc = lower_iops->create(dir, dentry, mode, nd);
-	printk(KERN_ALERT "lower_fops (0x%x) \n", dentry->d_inode->i_fop);
-	lower_aops = dentry->d_inode->i_mapping->a_ops; //FIXME: a_ops points to a strange area
-	if (lower_aops) {
-		printk(KERN_ALERT "OOOOOOOO: lower_aops is not null(0x%x) <- Is the value strange?\n", lower_aops);
-		droidcry_copy_address_space_operations(droidcry_aops, lower_aops);
+	lower_fops = dentry->d_inode->i_fop; 
+	printk(KERN_ALERT "lower_fops (0x%x) \n", lower_fops);
+	if (lower_fops) {
+		printk(KERN_ALERT "OOOOOOOO: lower_fops is not null(0x%x) <- Is the value strange?\n", lower_fops);
+		droidcry_copy_file_operations();
 	} else {
-		printk(KERN_ALERT "OOOOOOOO: lower_aops is null\n");
+		printk(KERN_ALERT "OOOOOOOO: lower_fops is null\n");
 	}
-	dentry->d_inode->i_mapping->a_ops = &droidcry_aops;
+	dentry->d_inode->i_fop = &droidcry_fops;
 	return rc;	
 }
 
