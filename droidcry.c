@@ -140,6 +140,7 @@ static int droidcry_create(struct inode *dir, struct dentry *dentry, umode_t mod
 {
 	int rc;
 	printk(KERN_ALERT "OOOOOOOO: My own create\n");
+	printk(KERN_ALERT "lower_fops (0x%x) \n", dentry->d_inde->i_fop);
 	rc = lower_iops->create(dir, dentry, mode, nd);
 	lower_aops = dentry->d_inode->i_mapping->a_ops; //FIXME: a_ops points to a strange area
 	if (lower_aops) {
