@@ -140,11 +140,12 @@ static int droidcry_create(struct inode *dir, struct dentry *dentry, umode_t mod
 {
 	int rc;
 	printk(KERN_ALERT "OOOOOOOO: My own create\n");
-	printk(KERN_ALERT "lower_fops (0x%x) \n", dentry->d_inde->i_fop);
+	
 	rc = lower_iops->create(dir, dentry, mode, nd);
+	printk(KERN_ALERT "lower_fops (0x%x) \n", dentry->d_inode->i_fop);
 	lower_aops = dentry->d_inode->i_mapping->a_ops; //FIXME: a_ops points to a strange area
 	if (lower_aops) {
-		printk(KERN_ALERT "OOOOOOOO: lower_aops is not null(0x%x) <- Is the value strange?\n", lower_apos);
+		printk(KERN_ALERT "OOOOOOOO: lower_aops is not null(0x%x) <- Is the value strange?\n", lower_aops);
 		droidcry_copy_address_space_operations(droidcry_aops, lower_aops);
 	} else {
 		printk(KERN_ALERT "OOOOOOOO: lower_aops is null\n");
