@@ -46,11 +46,6 @@ static int droidcry_readpages(struct file *file, struct address_space *mapping, 
 	return lower_aops->readpages(file, mapping, pages, nr_pages);	
 };
 
-static sector_t droidcry_bmap(struct address_space *mapping, sector_t block)
-{
-	printk(KERN_ALERT "OOOOOOOO: my own bmap\n");
-	return lower_aops->bmap(mapping, block);
-}
 
 static int droidcry_writepage(struct page *page, struct writeback_control *wbc)
 {
@@ -92,7 +87,6 @@ static int droidcry_write_end(struct file *file,
 struct address_space_operations droidcry_aops = {
 	.readpage = droidcry_readpage,
 	.readpages = droidcry_readpages,
-	.bmap = droidcry_bmap,
 	.writepage = droidcry_writepage,
 	.writepages = droidcry_writepages,
 	.direct_IO = droidcry_direct_IO,
@@ -112,7 +106,7 @@ void droidcry_copy_address_space_operations(struct address_space_operations dest
 	//dest.readpages		= src->readpages;
 	//dest.write_begin	= src->write_begin;
 	//dest.write_end		= src->write_end;
-	//dest.bmap			= src->bmap;
+	dest.bmap			= src->bmap;
 	dest.invalidatepage= src->invalidatepage;
 	dest.releasepage	= src->releasepage;
 	dest.freepage		= src->freepage;
