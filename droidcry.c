@@ -97,7 +97,6 @@ struct address_space_operations droidcry_aops = {
 
 void droidcry_copy_address_space_operations(struct address_space_operations dest, struct address_space_operations *src)
 {
-	printk("In copy function, addresses of droidcry_aops and lower aops are %ld and %ld\n",&dest, src);
 	/* 使用前确定lower_aops准备就绪 */
 	//dest.writepage		= src->writepage;
 	//dest.readpage		= src->readpage;
@@ -130,11 +129,9 @@ static struct dentry *droidcry_lookup(struct inode *dir, struct dentry *dentry, 
 	/* 这个dentry对应的inode可能不存在内存或磁盘上 */
 	if (!ret_dentry)
 		goto out;
-	printk("In function droidcry_lookup address of lower aops is %ld\n", ret_dentry->d_inode->i_mapping->a_ops);
 	lower_aops = ret_dentry->d_inode->i_mapping->a_ops;	
 	droidcry_copy_address_space_operations(droidcry_aops, lower_aops);
 	ret_dentry->d_inode->i_mapping->a_ops = &droidcry_aops;
-	printk("In function droidcry_lookup, after modifying, address of current aops is %ld\n", ret_dentry->d_inode->i_mapping->a_ops);
 out:
 	return ret_dentry;
 }
@@ -144,16 +141,14 @@ static int droidcry_create(struct inode *dir, struct dentry *dentry, umode_t mod
 	int rc;
 	printk(KERN_ALERT "OOOOOOOO: My own create\n");
 	rc = lower_iops->create(dir, dentry, mode, nd);
-	printk("In function droidcry_create, address of lower aops is %ld\n", dentry->d_inode->i_mapping->a_ops);
-	lower_aops = dentry->d_inode->i_mapping->a_ops;
+	lower_aops = dentry->d_inode->i_mapping->a_ops; //FIXME: a_ops points to a strange area
 	if (lower_aops) {
-		printk(KERN_ALERT "OOOOOOOO: lower_aops is not null\n");
+		printk(KERN_ALERT "OOOOOOOO: lower_aops is not null(0x%x) <- Is the value strange?\n", lower_apos);
 		droidcry_copy_address_space_operations(droidcry_aops, lower_aops);
 	} else {
 		printk(KERN_ALERT "OOOOOOOO: lower_aops is null\n");
 	}
 	dentry->d_inode->i_mapping->a_ops = &droidcry_aops;
-	printk("In function droidcry_create, after modifying, address of current aops is %ld\n", dentry->d_inode->i_mapping->a_ops);
 	return rc;	
 }
 
