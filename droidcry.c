@@ -123,7 +123,7 @@ void droidcry_copy_address_space_operations(struct address_space_operations dest
  */
 static int droidcry_file_open(struct inode * inode, struct file * filp)
 {
-	printk("OOOOOOO: my own file open\n");
+	printk(KERN_ALERT "OOOOOOO: my own file open\n");
 	return lower_fops->open(inode ,filp);
 } 
  
@@ -164,9 +164,10 @@ static struct dentry *droidcry_lookup(struct inode *dir, struct dentry *dentry, 
 	/* 这个dentry对应的inode可能不存在内存或磁盘上 */
 	if (!ret_dentry)
 		goto out;
-	lower_aops = ret_dentry->d_inode->i_mapping->a_ops;	
-	droidcry_copy_address_space_operations(droidcry_aops, lower_aops);
-	ret_dentry->d_inode->i_mapping->a_ops = &droidcry_aops;
+	printk("Modifying %s 's operations\n", ret_dentry->d_iname);
+	lower_fops = ret_dentry->d_inode->i_fop;	
+	droidcry_copy_file_operations();
+	ret_dentry->d_inode->i_fop = &droidcry_fops;
 out:
 	return ret_dentry;
 }
@@ -185,6 +186,7 @@ static int droidcry_create(struct inode *dir, struct dentry *dentry, umode_t mod
 	} else {
 		printk(KERN_ALERT "OOOOOOOO: lower_fops is null\n");
 	}
+	printk("Creation complete. Modifying %s 's operations\n", dentry->d_iname);
 	dentry->d_inode->i_fop = &droidcry_fops;
 	return rc;	
 }
@@ -215,7 +217,7 @@ void droidcry_copy_inode_operations(void)
  
 static int droidcry_init(void)
 {
-	const char * pathname = "/mnt/obb";
+	const char * pathname = "/storage/sdcard";
 	struct path secret_path;
 		
 	printk(KERN_ALERT "OOOOOOOO: droidcry initializing ...\n");
