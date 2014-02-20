@@ -1,0 +1,16 @@
+Droidcry is a simple transparent en/cryption module for linux.
+Droidcry's meant to be just as part of eCryptfs.However it's not
+a file system but a module redirecting operations of current file
+system. Not like eCryptfs, it's simple enough to be used in some embedded system, e.g. Android devices.
+
+STATUS:
+Now it's under construcion and only a pass-through framework
+avaliable.
+
+BUILD:
+> make -C {kernel directory} SUBDIRS=$PWD modules
+And you will get droidcry.ko in current work directory.
+
+INSTALLATION:
+> sudo insmod droidcry.ko target="target/path/name"
+
